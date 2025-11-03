@@ -26,40 +26,55 @@ namespace UPTSiteTests
                     return;
                 }
 
-                string runner;
-                string args;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                // Try pwsh first (preferred on modern runners). If not available or fails,
+                // fall back to powershell (Windows). Capture outputs from each attempt.
+                var attempts = new (string runner, string args)[]
                 {
-                    runner = "powershell";
-                    args = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" install";
-                }
-                else
-                {
-                    runner = "pwsh";
-                    args = $"-NoProfile -File \"{scriptPath}\" install";
-                }
-
-                var psi = new ProcessStartInfo(runner, args)
-                {
-                    WorkingDirectory = assemblyDir,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
+                    ("pwsh", $"-NoProfile -File \"{scriptPath}\" install"),
+                    ("powershell", $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" install")
                 };
 
-                using var proc = Process.Start(psi);
-                if (proc == null)
-                    throw new InvalidOperationException($"Failed to start process '{runner}' to install Playwright browsers.");
-
-                string stdout = proc.StandardOutput.ReadToEnd();
-                string stderr = proc.StandardError.ReadToEnd();
-                proc.WaitForExit();
-
-                if (proc.ExitCode != 0)
+                Exception lastEx = null;
+                for (int i = 0; i < attempts.Length; i++)
                 {
-                    throw new InvalidOperationException($"Playwright install failed (exit {proc.ExitCode}).\nstdout:\n{stdout}\nstderr:\n{stderr}");
+                    var (runnerCmd, runnerArgs) = attempts[i];
+                    try
+                    {
+                        var psi = new ProcessStartInfo(runnerCmd, runnerArgs)
+                        {
+                            WorkingDirectory = assemblyDir,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                        };
+
+                        using var proc = Process.Start(psi);
+                        if (proc == null)
+                            throw new InvalidOperationException($"Failed to start process '{runnerCmd}' to install Playwright browsers.");
+
+                        string stdout = proc.StandardOutput.ReadToEnd();
+                        string stderr = proc.StandardError.ReadToEnd();
+                        proc.WaitForExit();
+
+                        if (proc.ExitCode == 0)
+                        {
+                            // Success — stop attempting further runners.
+                            return;
+                        }
+
+                        // Non-zero exit code: record and try next.
+                        lastEx = new InvalidOperationException($"Playwright install failed with '{runnerCmd}' (exit {proc.ExitCode}).\nstdout:\n{stdout}\nstderr:\n{stderr}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Keep the exception and try next fallback.
+                        lastEx = ex;
+                        continue;
+                    }
                 }
+
+                // If we reach here, all attempts failed — throw the last observed exception with context.
+                throw new InvalidOperationException("All attempts to run the Playwright installer failed.", lastEx);
             }
             catch (Exception ex)
             {
