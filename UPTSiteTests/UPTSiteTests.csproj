@@ -9,4 +9,20 @@
     <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
   </ItemGroup>
+
+  <!-- Ensure Playwright browsers are installed after build when the generated playwright script exists.
+       This helps CI runners (GitHub Actions / autograders) download browsers before running tests.
+       On Windows it uses powershell.exe; on Linux/macOS it uses pwsh. The task only runs if the script file
+       produced by Microsoft.Playwright exists in the output folder. -->
+  <Target Name="InstallPlaywrightBrowsers" AfterTargets="Build" Condition="Exists('$(OutputPath)playwright.ps1')">
+    <!-- On Windows use powershell.exe -->
+    <Exec Condition="'$(OS)' == 'Windows_NT'"
+      Command="powershell -ExecutionPolicy Bypass -File playwright.ps1 install"
+      WorkingDirectory="$(OutputPath)" />
+
+    <!-- On non-Windows (CI linux/mac) use pwsh -->
+    <Exec Condition="'$(OS)' != 'Windows_NT'"
+      Command="pwsh -File playwright.ps1 install"
+      WorkingDirectory="$(OutputPath)" />
+  </Target>
 </Project>
