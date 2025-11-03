@@ -35,11 +35,16 @@ namespace UPTSiteTests
                 };
 
                 Exception lastEx = null;
+                var logFile = Path.Combine(assemblyDir, "playwright-install.log");
+                File.AppendAllText(logFile, $"Playwright installer started at {DateTime.UtcNow:O}\n");
                 for (int i = 0; i < attempts.Length; i++)
                 {
                     var (runnerCmd, runnerArgs) = attempts[i];
                     try
                     {
+                        File.AppendAllText(logFile, $"Attempt {i + 1}: runner={runnerCmd}, args={runnerArgs}\n");
+                        Console.WriteLine($"[PlaywrightInstaller] Attempt {i + 1}: starting '{runnerCmd}' {runnerArgs}");
+
                         var psi = new ProcessStartInfo(runnerCmd, runnerArgs)
                         {
                             WorkingDirectory = assemblyDir,
@@ -50,14 +55,23 @@ namespace UPTSiteTests
 
                         using var proc = Process.Start(psi);
                         if (proc == null)
-                            throw new InvalidOperationException($"Failed to start process '{runnerCmd}' to install Playwright browsers.");
+                        {
+                            var msg = $"Failed to start process '{runnerCmd}' to install Playwright browsers.";
+                            File.AppendAllText(logFile, msg + "\n");
+                            throw new InvalidOperationException(msg);
+                        }
 
                         string stdout = proc.StandardOutput.ReadToEnd();
                         string stderr = proc.StandardError.ReadToEnd();
                         proc.WaitForExit();
 
+                        File.AppendAllText(logFile, $"ExitCode={proc.ExitCode}\nstdout:\n{stdout}\nstderr:\n{stderr}\n");
+                        Console.WriteLine($"[PlaywrightInstaller] {runnerCmd} exited {proc.ExitCode}");
+
                         if (proc.ExitCode == 0)
                         {
+                            File.AppendAllText(logFile, "Playwright install succeeded.\n");
+                            Console.WriteLine("[PlaywrightInstaller] Playwright install succeeded");
                             // Success — stop attempting further runners.
                             return;
                         }
@@ -67,6 +81,8 @@ namespace UPTSiteTests
                     }
                     catch (Exception ex)
                     {
+                        File.AppendAllText(logFile, $"Attempt {i + 1} exception: {ex}\n");
+                        Console.WriteLine($"[PlaywrightInstaller] Attempt {i + 1} exception: {ex.Message}");
                         // Keep the exception and try next fallback.
                         lastEx = ex;
                         continue;
