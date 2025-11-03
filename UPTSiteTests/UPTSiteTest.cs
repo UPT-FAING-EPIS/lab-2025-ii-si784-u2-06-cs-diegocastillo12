@@ -120,6 +120,8 @@ public class UPTSiteTest : PageTest
 
     // Scroll to footer and check for contact-related text
     await Page.EvaluateAsync("window.scrollTo(0, document.body.scrollHeight)");
-    await Expect(Page.GetByText(new Regex("Contacto|Contáctenos|Teléfono|E-mail"))).ToBeVisibleAsync();
+    // GetByText may match multiple elements (link + heading). Use the first match to avoid strict-mode errors.
+    var contactLocator = Page.GetByText(new Regex("Contacto|Contáctenos|Teléfono|E-mail")).First;
+    await Expect(contactLocator).ToBeVisibleAsync();
     }
 }
