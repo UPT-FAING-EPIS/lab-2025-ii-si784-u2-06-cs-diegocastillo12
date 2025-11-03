@@ -46,9 +46,10 @@ jobs:
         run: |
           reportgenerator "-reports:./**/coverage.cobertura.xml" "-targetdir:./Cobertura" -reporttypes:HTML
 
-      - name: Upload coverage HTML to Pages artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: Upload coverage HTML artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: cobertura-html
           path: ./Cobertura
 
       - name: Upload test videos
@@ -69,5 +70,16 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download cobertura artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: cobertura-html
+
+      - name: Deploy Cobertura to GitHub Pages (gh-pages)
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: Cobertura
