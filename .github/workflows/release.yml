@@ -1,0 +1,56 @@
+name: Release - Pack and publish NuGet + GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      matricula:
+        description: 'Código de matrícula (ej: 20201234) -- usado como versión del paquete'
+        required: true
+        default: '0.0.0'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  pack-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine package version
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::set-output name=version::${{ github.event.inputs.matricula }}"
+          else
+            # If triggered by tag vX.Y.Z use tag name without 'v'
+            version=$(echo "${GITHUB_REF}" | sed -e 's,.*/v,,')
+            echo "::set-output name=version::${version}"
+          fi
+
+      - name: Pack project
+        run: |
+          dotnet pack UPTSiteTests/UPTSiteTests.csproj -c Release /p:PackageVersion=${{ steps.vars.outputs.version }} -o ./nupkgs
+
+      - name: Publish package to GitHub Packages (NuGet)
+        env:
+          NUGET_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        run: |
+          dotnet nuget push ./nupkgs/*.nupkg -s $NUGET_SOURCE -k ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name || format('v{0}', steps.vars.outputs.version) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

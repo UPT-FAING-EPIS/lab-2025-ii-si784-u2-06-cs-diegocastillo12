@@ -1,0 +1,73 @@
+name: CI - Tests, Coverage and Publish to Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Playwright browsers
+        uses: microsoft/playwright-github-action@v1
+        with:
+          browser: all
+
+      - name: Restore
+        run: dotnet restore UPTSiteTests/UPTSiteTests.csproj
+
+      - name: Build
+        run: dotnet build UPTSiteTests/UPTSiteTests.csproj --configuration Debug --no-restore
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test UPTSiteTests/UPTSiteTests.csproj --configuration Debug --collect:"XPlat Code Coverage"
+
+      - name: Install ReportGenerator (global tool)
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.23 || true
+
+      - name: Generate HTML coverage report
+        env:
+          PATH: ${{ github.workspace }}/.dotnet/tools:${{ env.PATH }}
+        run: |
+          reportgenerator "-reports:./**/coverage.cobertura.xml" "-targetdir:./Cobertura" -reporttypes:HTML
+
+      - name: Upload coverage HTML to Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./Cobertura
+
+      - name: Upload test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos
+          path: UPTSiteTests/videos || playwright-videos || videos
+
+      - name: Upload playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: playwright-traces || UPTSiteTests/playwright-traces || ./playwright-traces
+
+  publish-pages:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1

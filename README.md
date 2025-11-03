@@ -2,6 +2,7 @@
 # SESION DE LABORATORIO N° 06: PRUEBAS DE INTERFAZ DE USUARIO
 
 ### Nombre:
+Diego Fernando Castillo Mamani
 
 ## OBJETIVOS
   * Comprender el funcionamiento de las pruebas de interfaz de usuario en una aplicación web.
@@ -170,3 +171,16 @@ ReportGenerator "-reports:./*/*/*/coverage.cobertura.xml" "-targetdir:Cobertura"
 1. Adicionar al menos 2 escenarios de prueba mas.
 2. Generar una automatización (publish_cov_report.yml), que permita la compilación y pruebas del código (https://playwright.dev/dotnet/docs/ci-intro). Y publicar el reporte de cobertura y los videos generados por las pruebas en un Github Page
 3. Generar una automatización (release.yml) que: * Genere el nuget con su codigo de matricula como version del componente, * Publique el nuget en Github Packages, * Genere el release correspondiente.
+
+---
+## Evidencias entregadas
+
+Archivos agregados al repositorio como parte de la entrega de la actividad:
+
+- `UPTSiteTests/UPTSiteTests.csproj` — proyecto de pruebas MSTest con Playwright (net8.0).
+- `UPTSiteTests/UPTSiteTest.cs` — casos de prueba (incluye 3 pruebas del README + 2 pruebas nuevas solicitadas).
+- `.github/workflows/publish_cov_report.yml` — GitHub Actions para compilar, ejecutar pruebas, generar reporte de cobertura y publicar la carpeta HTML en GitHub Pages. También sube los videos y trazas como artefactos.
+- `.github/workflows/release.yml` — GitHub Actions para generar NuGet usando la versión indicada por el input `matricula`, publicar el paquete a GitHub Packages y crear un Release.
+- `EVIDENCIAS.md` — instrucciones y evidencia textual sobre cómo ejecutar las pruebas localmente, cómo ver trazas y el reporte de cobertura.
+
+Nota: No modifiqué `classroom.yml` como se pidió. Se asumió que "SOT" se refiere a documentos de evidencia (Se ha añadido `EVIDENCIAS.md`). Si SOT tiene otro significado, por favor indícalo y lo adapto.
