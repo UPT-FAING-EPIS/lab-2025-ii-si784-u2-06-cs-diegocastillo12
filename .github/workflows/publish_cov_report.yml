@@ -107,4 +107,6 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: Cobertura
+          # The artifact is downloaded into a folder named after the artifact (cobertura-html)
+          # so point the deploy action to that directory.
+          folder: cobertura-html
