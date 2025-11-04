@@ -102,6 +102,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: cobertura-html
+          path: cobertura-html
 
       - name: Inspect workspace (debug)
         run: |
@@ -115,7 +116,5 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          # The artifact is downloaded into a folder named after the artifact (cobertura-html).
-          # The uploaded artifact originally contained a folder 'Cobertura', so point to that
-          # nested folder to ensure index.html is found.
-          folder: cobertura-html/Cobertura
+          # Deploy the contents extracted into 'cobertura-html'
+          folder: cobertura-html
