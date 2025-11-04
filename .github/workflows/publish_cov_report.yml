@@ -37,6 +37,25 @@ jobs:
         run: |
           dotnet test UPTSiteTests/UPTSiteTests.csproj --configuration Debug --collect:"XPlat Code Coverage"
 
+      - name: Show Playwright installer log (if present)
+        if: always()
+        run: |
+          LOG=UPTSiteTests/bin/Debug/net8.0/playwright-install.log
+          if [ -f "$LOG" ]; then
+            echo "--- playwright-install.log ---"
+            sed -n '1,200p' "$LOG" || true
+            echo "--- end of log ---"
+          else
+            echo "No playwright-install.log found at $LOG"
+          fi
+
+      - name: Upload Playwright installer log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-install-log
+          path: UPTSiteTests/bin/Debug/net8.0/playwright-install.log
+
       - name: Install ReportGenerator (global tool)
         run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.23 || true
 
