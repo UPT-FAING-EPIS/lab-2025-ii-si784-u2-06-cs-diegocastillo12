@@ -64,9 +64,10 @@ jobs:
       - name: Install ReportGenerator (global tool)
         run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.1.23 || true
 
+      - name: Add dotnet global tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
       - name: Generate HTML coverage report
-        env:
-          PATH: ${{ github.workspace }}/.dotnet/tools:${{ env.PATH }}
         run: |
           reportgenerator "-reports:./**/coverage.cobertura.xml" "-targetdir:./Cobertura" -reporttypes:HTML
 
