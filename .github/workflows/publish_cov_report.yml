@@ -103,10 +103,19 @@ jobs:
         with:
           name: cobertura-html
 
+      - name: Inspect workspace (debug)
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Listing root:" 
+          ls -la
+          echo "Listing cobertura-html if present:" 
+          if [ -d cobertura-html ]; then ls -la cobertura-html || true; fi
+
       - name: Deploy Cobertura to GitHub Pages (gh-pages)
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          # The artifact is downloaded into a folder named after the artifact (cobertura-html)
-          # so point the deploy action to that directory.
-          folder: cobertura-html
+          # The artifact is downloaded into a folder named after the artifact (cobertura-html).
+          # The uploaded artifact originally contained a folder 'Cobertura', so point to that
+          # nested folder to ensure index.html is found.
+          folder: cobertura-html/Cobertura
