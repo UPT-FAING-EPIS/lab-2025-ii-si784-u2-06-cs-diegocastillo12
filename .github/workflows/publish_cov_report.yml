@@ -118,6 +118,5 @@ jobs:
           branch: gh-pages
           # Deploy the contents extracted into 'cobertura-html'
           folder: cobertura-html
-          # Use a Personal Access Token stored in repository secrets named GH_PAT.
-          # Create a PAT with repo + workflow scopes and add it to Settings -> Secrets -> Actions.
-          token: ${{ secrets.GH_PAT }}
+          # Use GH_PAT if available (required for org repos), fallback to GITHUB_TOKEN
+          token: ${{ secrets.GH_PAT || github.token }}
